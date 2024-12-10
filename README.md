@@ -71,13 +71,18 @@ MIT License - feel free to use this in your own projects!
 
 ## 🤝 Contributing
 
-Contributions welcome! Feel free to:
-- Open issues
-- Submit PRs
-- Suggest new agents or features
+Contributions welcome! Feel free to fork.
 
 ## 🙏 Acknowledgments
 
+This project was heavily inspired by and builds upon:
+- [AI Agents Masterclass](https://github.com/coleam00/ai-agents-masterclass) by [@coleam00](https://github.com/coleam00)
+- Special thanks to Cole Murray ([@coleam00](https://github.com/coleam00)) for the excellent tutorial and codebase
+- [Claude](https://anthropic.com/claude) by Anthropic for assistance in project structuring and development
 - [Ollama](https://ollama.com/) for the amazing models
 - [Streamlit](https://streamlit.io/) for the UI framework
 - [Pydantic-AI](https://github.com/jxnl/pydantic-ai) for agent architecture
+
+## 🎓 Educational Note
+
+This project serves as a learning implementation and extension of concepts taught in Cole Murray's AI Agents Masterclass.
