@@ -14,16 +14,19 @@ sys.path.append(str(Path(__file__).parent.parent))
 from src.config import settings
 from src.agents.base_agent import BaseAgent
 from src.agents.web_search_agent import WebSearchAgent
+from src.agents.stock_analysis_agent import StockAnalysisAgent
 from src.utils.ollama_utils import get_ollama_models, create_ollama_client
 from src.ui.streamlit_app import EnhancedUI
 
 class AgentType(Enum):
+    STOCK_ANALYSIS = "Stock Analysis"
     WEB_SEARCH = "Web Search"
 
 class AgentManager:
     def __init__(self):
         self.agents: Dict[AgentType, Type[BaseAgent]] = {
             AgentType.WEB_SEARCH: WebSearchAgent,
+            AgentType.STOCK_ANALYSIS: StockAnalysisAgent,
         }
         self.current_agent: Optional[BaseAgent] = None
         
