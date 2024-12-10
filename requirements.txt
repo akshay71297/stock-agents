@@ -1,5 +1,6 @@
 # Core Libraries
 streamlit==1.29.0
+streamlit-javascript==0.1.4
 python-dotenv==1.0.0
 httpx==0.27.0
 logfire==0.3.4

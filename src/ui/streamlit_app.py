@@ -1,100 +1,81 @@
+import streamlit as st
 import asyncio
-from typing import List
+import hashlib
+from typing import List, Optional, Callable, Any
 
-import streamlit as st
-from pydantic_ai.messages import UserPrompt, ModelTextResponse
+# Configure page
+st.set_page_config(
+    page_title="AI Agents Hub",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-from src.utils.ollama_utils import get_ollama_models, create_ollama_client
-from src.agents.web_search_agent import WebSearchAgent
-from src.config import settings
-from pydantic_ai.models.openai import OpenAIModel
+def is_markdown_content(content: str) -> bool:
+    """Check if content contains markdown elements"""
+    markdown_indicators = [
+        "```",        # Code blocks
+        "###",        # Headers
+        "- ",         # List items
+        "1. ",        # Numbered lists
+        "|---",       # Tables
+        "![",         # Images
+        "[",          # Links
+        "> ",         # Blockquotes
+    ]
+    return any(indicator in content for indicator in markdown_indicators)
 
-def initialize_chat_history():
-    """Initialize or retrieve chat history from session state."""
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+class EnhancedUI:
+    def __init__(self):
+        if 'messages' not in st.session_state:
+            st.session_state.messages = []
 
-def display_chat_history():
-    """Display existing chat messages."""
-    for message in st.session_state.messages:
-        role = message.role
-        with st.chat_message("human" if role == "user" else "ai"):
-            st.markdown(message.content)
+    def render(self, agent: Any, process_message: Callable, model_name: str):
+        """Render the chat interface"""
+        # Display chat history
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
 
-def run_streamlit_app():
-    """Main Streamlit application entry point."""
-    st.title("🔍 AI Web Search Agent")
-    
-    # Sidebar configuration
-    st.sidebar.header("Configuration")
-    
-    # Brave API Key input
-    brave_api_key = st.sidebar.text_input(
-        "Brave API Key", 
-        type="password", 
-        value=settings.BRAVE_API_KEY
-    )
-    
-    # Fetch and display Ollama models
-    ollama_models = get_ollama_models()
-    
-    # Model selection dropdown
-    selected_model = st.sidebar.selectbox(
-        "Select Ollama Model", 
-        options=ollama_models if ollama_models else ['No models found']
-    )
-    
-    # Check if models are available
-    if not ollama_models:
-        st.sidebar.warning("No Ollama models found. Please pull a model.")
-        return
-
-    # Initialize chat history
-    initialize_chat_history()
-    
-    # Display existing chat history
-    display_chat_history()
-
-    # User input
-    if prompt := st.chat_input("What would you like to research today?"):
-        # Display user message
-        st.chat_message("user").markdown(prompt)
-        
-        # Add user message to chat history
-        st.session_state.messages.append(UserPrompt(content=prompt))
-
-        # Prepare Ollama client and model
-        ollama_client = create_ollama_client(selected_model)
-        model = OpenAIModel(selected_model, openai_client=ollama_client)
-
-        # Initialize web search agent
-        web_search_agent = WebSearchAgent(model)
-
-        # Display assistant response
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
+        # Chat input
+        if prompt := st.chat_input("What would you like to know?"):
+            # Add user message
+            st.session_state.messages.append({"role": "user", "content": prompt})
             
-            try:
-                # Run the prompt
-                with st.spinner(f'Searching and generating response using {selected_model}...'):
-                    response = asyncio.run(web_search_agent.process_query(prompt))
-                
-                # Display the response
-                message_placeholder.markdown(response)
-                
-                # Add model response to chat history
-                st.session_state.messages.append(ModelTextResponse(content=response))
+            # Show user message
+            with st.chat_message("user"):
+                st.markdown(prompt)
             
-            except Exception as e:
-                st.error(f"An error occurred: {str(e)}")
-
-8. `src/main.py`:
-<antArtifact identifier="main-script" type="application/vnd.ant.code" language="python" title="Main Application Entry Point">
-import streamlit as st
-from src.ui.streamlit_app import run_streamlit_app
-
-def main():
-    run_streamlit_app()
-
-if __name__ == '__main__':
-    main()
+            # Process and show assistant response
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty()
+                status_container = st.empty()
+                
+                # Show initial status
+                status_container.status(f"Processing with {model_name}", state="running", expanded=False)
+                
+                try:
+                    # Get response
+                    response = asyncio.run(process_message(agent, prompt))
+                    status_container.status("Done!", state="complete", expanded=False)
+                    
+                    # Add response to messages
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": response
+                    })
+                    
+                    # Clear status after a short delay
+                    status_container.empty()
+                    
+                    # Display response directly
+                    message_placeholder.markdown(response)
+                
+                except Exception as e:
+                    error_msg = f"Error processing request: {str(e)}"
+                    status_container.status("Error occurred", state="error")
+                    message_placeholder.error(error_msg)
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": error_msg
+                    })

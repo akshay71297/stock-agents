@@ -6,7 +6,11 @@ load_dotenv()
 
 class Settings:
     # Ollama Configuration
-    OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434/v1')
+    # Use host.docker.internal when running in Docker, localhost otherwise
+    OLLAMA_BASE_URL = os.getenv(
+        'OLLAMA_BASE_URL', 
+        'http://host.docker.internal:11434/v1' if os.getenv('DOCKER_ENV') else 'http://localhost:11434/v1'
+    )
     OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY', 'ollama')
 
     # Brave Search API
